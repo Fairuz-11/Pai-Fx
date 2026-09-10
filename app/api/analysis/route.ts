@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ProviderFactory } from '@/lib/market/provider-factory'
+import { MockProvider } from '@/lib/market/mock-provider'
 import { Timeframe } from '@/types/market'
 import { calculateAllIndicators } from '@/lib/indicators'
 import { analyzeTrend, getTrendSummary } from '@/lib/analysis/trend-analysis'
@@ -17,7 +18,7 @@ const querySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const validation = querySchema.safeParse({
       symbol: searchParams.get('symbol'),
       timeframe: searchParams.get('timeframe'),
@@ -32,58 +33,53 @@ export async function GET(request: NextRequest) {
 
     const { symbol, timeframe } = validation.data
 
-    // Fetch candles
-    const provider = ProviderFactory.getProvider()
-    const candles = await provider.getCandles(symbol, timeframe as Timeframe, 200)
+    // Fetch candles — fallback to mock if primary provider fails
+    let candles
+    try {
+      const provider = ProviderFactory.getProvider()
+      candles = await provider.getCandles(symbol, timeframe as Timeframe, 200)
+    } catch (err) {
+      console.warn('[analysis] Primary provider failed, using mock:', err)
+      const mock = new MockProvider()
+      candles = await mock.getCandles(symbol, timeframe as Timeframe, 200)
+    }
 
-    if (candles.length === 0) {
+    if (!candles || candles.length === 0) {
       return NextResponse.json(
         { error: 'No data available for analysis' },
         { status: 404 }
       )
     }
 
-    // Get current price
+    // Current price
     const currentPrice = candles[candles.length - 1].close
     const previousPrice = candles[candles.length - 2]?.close || currentPrice
     const change = currentPrice - previousPrice
     const changePercent = (change / previousPrice) * 100
 
-    // Calculate indicators
-    const indicators = calculateAllIndicators(candles)
-
-    // Analyze trend
-    const trendAnalysis = analyzeTrend(candles)
-    const trendSummary = getTrendSummary(trendAnalysis)
-
-    // Calculate signal score
-    const signalScore = calculateSignalScore(candles)
-    const signalSummary = getSignalSummary(signalScore)
-
-    // Detect support & resistance
-    const supportResistance = detectSupportResistance(candles)
-    const nearestSupport = findNearestSupport(candles, supportResistance)
-    const nearestResistance = findNearestResistance(candles, supportResistance)
-
-    // Analyze market structure
+    // Calculate all analysis
+    const indicators      = calculateAllIndicators(candles)
+    const trendAnalysis   = analyzeTrend(candles)
+    const trendSummary    = getTrendSummary(trendAnalysis)
+    const signalScore     = calculateSignalScore(candles)
+    const signalSummary   = getSignalSummary(signalScore)
+    const srLevels        = detectSupportResistance(candles)
+    const nearestSupport  = findNearestSupport(candles, srLevels)
+    const nearestResistance = findNearestResistance(candles, srLevels)
     const marketStructure = analyzeMarketStructure(candles)
     const structureSummary = getStructureSummary(marketStructure)
-
-    // Detect candle patterns
-    const patterns = detectCandlePatterns(candles)
-    const patternSummary = getPatternSummary(patterns)
+    const patterns        = detectCandlePatterns(candles)
+    const patternSummary  = getPatternSummary(patterns)
 
     return NextResponse.json({
       symbol,
       timeframe,
       timestamp: Date.now(),
-      
-      // Price data
+
       currentPrice,
       change,
       changePercent,
-      
-      // Indicators
+
       indicators: {
         ema20: indicators.ema20,
         ema50: indicators.ema50,
@@ -93,40 +89,35 @@ export async function GET(request: NextRequest) {
         bollingerBands: indicators.bollingerBands,
         atr: indicators.atr,
       },
-      
-      // Trend analysis
+
       trend: {
         ...trendAnalysis,
         summary: trendSummary,
       },
-      
-      // Signal
+
       signal: {
         ...signalScore,
         summary: signalSummary,
       },
 
-      // Support & Resistance
       supportResistance: {
-        levels: supportResistance,
+        levels: srLevels,
         nearestSupport,
         nearestResistance,
       },
 
-      // Market Structure
       marketStructure: {
         structures: marketStructure,
         summary: structureSummary,
       },
 
-      // Patterns
       patterns: {
         detected: patterns,
         summary: patternSummary,
       },
     })
   } catch (error) {
-    console.error('Error in /api/analysis:', error)
+    console.error('[analysis] Unhandled error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to analyze market' },
       { status: 500 }

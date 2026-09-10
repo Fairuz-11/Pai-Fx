@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ProviderFactory } from '@/lib/market/provider-factory'
+import { MockProvider } from '@/lib/market/mock-provider'
 import { marketCache } from '@/lib/market/cache'
 import { z } from 'zod'
 
@@ -10,7 +11,7 @@ const querySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const validation = querySchema.safeParse({
       symbol: searchParams.get('symbol'),
     })
@@ -24,30 +25,34 @@ export async function GET(request: NextRequest) {
 
     const { symbol } = validation.data
 
-    // Check cache first (cache quotes for 10 seconds)
+    // Check cache first
     const cacheKey = `quote:${symbol}`
     const cached = marketCache.get(cacheKey)
-    
+
     if (cached) {
-      return NextResponse.json({
-        ...cached,
-        cached: true,
-      })
+      return NextResponse.json({ quote: cached, cached: true })
     }
 
-    // Fetch from provider
-    const provider = ProviderFactory.getProvider()
-    const quote = await provider.getQuote(symbol)
+    // Try primary provider, fallback to mock on error
+    let quote
+    let usedFallback = false
 
-    // Cache for 10 seconds
-    marketCache.set(cacheKey, quote, 10)
+    try {
+      const provider = ProviderFactory.getProvider()
+      quote = await provider.getQuote(symbol)
+    } catch (providerError) {
+      console.error('[quote] Primary provider failed, falling back to mock:', providerError)
+      const mockProvider = new MockProvider()
+      quote = await mockProvider.getQuote(symbol)
+      usedFallback = true
+    }
 
-    return NextResponse.json({
-      ...quote,
-      cached: false,
-    })
+    // Cache for 15 seconds for real data, 10 for mock
+    marketCache.set(cacheKey, quote, usedFallback ? 10 : 15)
+
+    return NextResponse.json({ quote, cached: false, fallback: usedFallback })
   } catch (error) {
-    console.error('Error in /api/market/quote:', error)
+    console.error('[quote] Unhandled error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch quote' },
       { status: 500 }

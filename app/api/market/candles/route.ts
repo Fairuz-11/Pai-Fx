@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ProviderFactory } from '@/lib/market/provider-factory'
+import { MockProvider } from '@/lib/market/mock-provider'
 import { marketCache } from '@/lib/market/cache'
 import { Timeframe } from '@/types/market'
 import { z } from 'zod'
@@ -13,7 +14,7 @@ const querySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    
+
     const validation = querySchema.safeParse({
       symbol: searchParams.get('symbol'),
       timeframe: searchParams.get('timeframe'),
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Check cache first
     const cacheKey = `candles:${symbol}:${timeframe}:${limit}`
     const cached = marketCache.get(cacheKey)
-    
+
     if (cached) {
       return NextResponse.json({
         symbol,
@@ -42,12 +43,22 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Fetch from provider
-    const provider = ProviderFactory.getProvider()
-    const candles = await provider.getCandles(symbol, timeframe as Timeframe, limit)
+    // Try primary provider, fallback to mock on error
+    let candles
+    let usedFallback = false
 
-    // Cache for 1 minute for 1m timeframe, longer for higher timeframes
-    const cacheTtl = timeframe === '1m' ? 60 : timeframe === '5m' ? 120 : 300
+    try {
+      const provider = ProviderFactory.getProvider()
+      candles = await provider.getCandles(symbol, timeframe as Timeframe, limit)
+    } catch (providerError) {
+      console.error('[candles] Primary provider failed, falling back to mock:', providerError)
+      const mockProvider = new MockProvider()
+      candles = await mockProvider.getCandles(symbol, timeframe as Timeframe, limit)
+      usedFallback = true
+    }
+
+    // Cache: shorter TTL for real data, longer for mock
+    const cacheTtl = usedFallback ? 60 : (timeframe === '1m' ? 30 : timeframe === '5m' ? 60 : 180)
     marketCache.set(cacheKey, candles, cacheTtl)
 
     return NextResponse.json({
@@ -55,9 +66,10 @@ export async function GET(request: NextRequest) {
       timeframe,
       candles,
       cached: false,
+      fallback: usedFallback,
     })
   } catch (error) {
-    console.error('Error in /api/market/candles:', error)
+    console.error('[candles] Unhandled error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch candles' },
       { status: 500 }

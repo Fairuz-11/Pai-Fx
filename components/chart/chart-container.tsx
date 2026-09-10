@@ -33,8 +33,15 @@ export function ChartContainer({ symbol, defaultTimeframe = '1h' }: ChartContain
   }
 
   const handleFullscreen = () => {
-    // TODO: Implement fullscreen mode
-    console.log('Fullscreen not implemented yet')
+    const el = document.getElementById('chart-fullscreen-container')
+    if (!el) return
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().catch((err) => {
+        console.error('Fullscreen error:', err)
+      })
+    } else {
+      document.exitFullscreen()
+    }
   }
 
   const handleToggleIndicator = (id: string) => {
@@ -46,7 +53,10 @@ export function ChartContainer({ symbol, defaultTimeframe = '1h' }: ChartContain
   return (
     <div className="space-y-4">
       {/* Chart */}
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+      <div
+        id="chart-fullscreen-container"
+        className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden"
+      >
         <ChartToolbar
           symbol={symbol}
           timeframe={timeframe}

@@ -29,7 +29,7 @@ interface QuoteData {
   symbol: string
   price: number
   change: number
-  changePct: number
+  changePercent: number
 }
 
 export default function WatchlistPage() {
@@ -88,7 +88,7 @@ export default function WatchlistPage() {
               symbol,
               price: data.quote.price,
               change: data.quote.change,
-              changePct: data.quote.changePct,
+              changePercent: data.quote.changePercent,
             }
           }
         } catch (err) {
@@ -319,8 +319,8 @@ export default function WatchlistPage() {
                           <TrendingDown size={16} />
                         )}
                         {quote.change >= 0 ? '+' : ''}
-                        {quote.change.toFixed(5)} ({quote.changePct >= 0 ? '+' : ''}
-                        {quote.changePct.toFixed(2)}%)
+                        {quote.change.toFixed(5)} ({quote.changePercent >= 0 ? '+' : ''}
+                        {quote.changePercent.toFixed(2)}%)
                       </div>
                     </div>
                   ) : (

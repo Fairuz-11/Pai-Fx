@@ -1,9 +1,11 @@
 import { MainLayout } from '@/components/layout/main-layout'
 import { ChartContainer } from '@/components/chart/chart-container'
 
-export default function ChartPage({ params }: { params: { symbol: string } }) {
+// Next.js 15+ requires params to be awaited
+export default async function ChartPage({ params }: { params: Promise<{ symbol: string }> }) {
+  const { symbol: rawSymbol } = await params
   // Convert symbol from URL format (EUR-USD) to display format (EUR/USD)
-  const symbol = params.symbol.replace('-', '/')
+  const symbol = rawSymbol.replace('-', '/')
 
   return (
     <MainLayout>
@@ -16,7 +18,7 @@ export default function ChartPage({ params }: { params: { symbol: string } }) {
             Real-time candlestick chart with technical indicators
           </p>
         </div>
-        
+
         <ChartContainer symbol={symbol} defaultTimeframe="1h" />
       </div>
     </MainLayout>

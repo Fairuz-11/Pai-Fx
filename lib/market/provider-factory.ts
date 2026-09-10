@@ -5,27 +5,28 @@ import { TwelveDataProvider } from './twelve-data-provider'
 import { AlphaVantageProvider } from './alpha-vantage-provider'
 import { MockProvider } from './mock-provider'
 
-export type ProviderType = 'twelve_data' | 'alpha_vantage' | 'finnhub' | 'mock'
+export type ProviderType = 'twelvedata' | 'alphavantage' | 'mock'
 
 export class ProviderFactory {
   static createProvider(type: ProviderType): MarketDataProvider {
-    const apiKey = process.env.MARKET_DATA_API_KEY || ''
-    const baseUrl = process.env.MARKET_DATA_BASE_URL || ''
-
     switch (type) {
-      case 'twelve_data':
+      case 'twelvedata': {
+        const apiKey = process.env.TWELVE_DATA_API_KEY || ''
         if (!apiKey) {
-          console.warn('MARKET_DATA_API_KEY not set, using Mock provider')
+          console.warn('TWELVE_DATA_API_KEY not set, falling back to Mock provider')
           return new MockProvider()
         }
-        return new TwelveDataProvider(apiKey, baseUrl || 'https://api.twelvedata.com')
+        return new TwelveDataProvider(apiKey, 'https://api.twelvedata.com')
+      }
 
-      case 'alpha_vantage':
+      case 'alphavantage': {
+        const apiKey = process.env.ALPHA_VANTAGE_API_KEY || ''
         if (!apiKey) {
-          console.warn('MARKET_DATA_API_KEY not set, using Mock provider')
+          console.warn('ALPHA_VANTAGE_API_KEY not set, falling back to Mock provider')
           return new MockProvider()
         }
-        return new AlphaVantageProvider(apiKey, baseUrl || 'https://www.alphavantage.co')
+        return new AlphaVantageProvider(apiKey, 'https://www.alphavantage.co')
+      }
 
       case 'mock':
         return new MockProvider()
