@@ -21,7 +21,7 @@ export class AIFactory {
         return new GroqProvider(
           apiKey,
           'https://api.groq.com/openai/v1',
-          process.env.GROQ_MODEL || 'llama3-70b-8192'
+          process.env.GROQ_MODEL || 'openai/gpt-oss-20b'
         )
       }
 
