@@ -125,13 +125,10 @@ IMPORTANT:
 - Respond ONLY with valid JSON, no additional text`
   }
 
-  protected parseAIResponse(response: string): AIAnalysisOutput {
+  protected parseAIResponse(response: string, input: AIAnalysisInput): AIAnalysisOutput {
     try {
-      // Try to extract JSON from response
       const jsonMatch = response.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response')
-      }
+      if (!jsonMatch) throw new Error('No JSON found in response')
 
       const parsed = JSON.parse(jsonMatch[0])
 
@@ -147,8 +144,6 @@ IMPORTANT:
       }
     } catch (error) {
       console.error('Error parsing AI response:', error)
-      
-      // Return fallback analysis
       return {
         overview: 'AI analysis temporarily unavailable. Using technical data only.',
         trendAnalysis: `Market shows ${input.trend.direction} trend with ${input.trend.strength} strength.`,

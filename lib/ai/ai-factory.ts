@@ -3,45 +3,61 @@
 import { AIProvider } from './base-ai-provider'
 import { OpenAIProvider } from './openai-provider'
 import { AnthropicProvider } from './anthropic-provider'
+import { GroqProvider } from './groq-provider'
 
-export type AIProviderType = 'openai' | 'anthropic'
+export type AIProviderType = 'openai' | 'anthropic' | 'groq'
 
 export class AIFactory {
-  static createProvider(type?: AIProviderType): AIProvider | null {
-    const apiKey = process.env.AI_API_KEY
-    const model = process.env.AI_MODEL || 'gpt-4'
-    const baseUrl = process.env.AI_BASE_URL
-
-    // If no API key, return null (AI disabled)
-    if (!apiKey) {
-      console.warn('AI_API_KEY not configured. AI analysis disabled.')
-      return null
-    }
-
-    const providerType = type || (process.env.AI_PROVIDER as AIProviderType) || 'openai'
+  static createProvider(): AIProvider | null {
+    const providerType = (process.env.AI_PROVIDER as AIProviderType) || 'openai'
 
     switch (providerType) {
-      case 'openai':
-        return new OpenAIProvider(
+      case 'groq': {
+        const apiKey = process.env.GROQ_API_KEY
+        if (!apiKey) {
+          console.warn('[AI] GROQ_API_KEY not set. AI analysis disabled.')
+          return null
+        }
+        return new GroqProvider(
           apiKey,
-          baseUrl || 'https://api.openai.com/v1',
-          model
+          'https://api.groq.com/openai/v1',
+          process.env.GROQ_MODEL || 'llama3-70b-8192'
         )
+      }
 
-      case 'anthropic':
+      case 'anthropic': {
+        const apiKey = process.env.ANTHROPIC_API_KEY
+        if (!apiKey) {
+          console.warn('[AI] ANTHROPIC_API_KEY not set. AI analysis disabled.')
+          return null
+        }
         return new AnthropicProvider(
           apiKey,
-          baseUrl || 'https://api.anthropic.com/v1',
-          model
+          'https://api.anthropic.com/v1',
+          process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307'
         )
+      }
 
-      default:
-        console.warn(`Unknown AI provider: ${providerType}. AI analysis disabled.`)
-        return null
+      case 'openai':
+      default: {
+        const apiKey = process.env.OPENAI_API_KEY
+        if (!apiKey) {
+          console.warn('[AI] OPENAI_API_KEY not set. AI analysis disabled.')
+          return null
+        }
+        return new OpenAIProvider(
+          apiKey,
+          'https://api.openai.com/v1',
+          process.env.OPENAI_MODEL || 'gpt-4o-mini'
+        )
+      }
     }
   }
 
   static isAIEnabled(): boolean {
-    return !!process.env.AI_API_KEY
+    const provider = process.env.AI_PROVIDER || 'openai'
+    if (provider === 'groq') return !!process.env.GROQ_API_KEY
+    if (provider === 'anthropic') return !!process.env.ANTHROPIC_API_KEY
+    return !!process.env.OPENAI_API_KEY
   }
 }

@@ -40,7 +40,7 @@ export class OpenAIProvider extends BaseAIProvider {
       const data = await response.json()
       const aiResponse = data.choices[0]?.message?.content || ''
 
-      return this.parseAIResponse(aiResponse)
+      return this.parseAIResponse(aiResponse, input)
     } catch (error) {
       console.error('Error calling OpenAI API:', error)
       throw error

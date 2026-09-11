@@ -36,7 +36,7 @@ export class AnthropicProvider extends BaseAIProvider {
       const data = await response.json()
       const aiResponse = data.content[0]?.text || ''
 
-      return this.parseAIResponse(aiResponse)
+      return this.parseAIResponse(aiResponse, input)
     } catch (error) {
       console.error('Error calling Anthropic API:', error)
       throw error
