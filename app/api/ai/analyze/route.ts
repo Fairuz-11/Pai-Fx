@@ -1,89 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIFactory } from '@/lib/ai/ai-factory'
 import { AIAnalysisInput } from '@/lib/ai/base-ai-provider'
-import { z } from 'zod'
-
-const requestSchema = z.object({
-  symbol: z.string(),
-  timeframe: z.string(),
-  currentPrice: z.number(),
-  changePercent: z.number(),
-  trend: z.object({
-    direction: z.string(),
-    strength: z.string(),
-    score: z.number(),
-    emaAlignment: z.boolean(),
-  }),
-  signal: z.object({
-    signal: z.string(),
-    bullishProbability: z.number(),
-    bearishProbability: z.number(),
-    confidence: z.number(),
-    setupStrength: z.string(),
-    riskLevel: z.string(),
-  }),
-  indicators: z.object({
-    rsi: z.number().optional(),
-    macd: z.object({
-      macd: z.number(),
-      signal: z.number(),
-      histogram: z.number(),
-    }).optional(),
-    ema20: z.number().optional(),
-    ema50: z.number().optional(),
-    ema200: z.number().optional(),
-  }),
-  supportResistance: z.object({
-    nearestSupport: z.object({
-      level: z.number(),
-      strength: z.string(),
-    }).optional(),
-    nearestResistance: z.object({
-      level: z.number(),
-      strength: z.string(),
-    }).optional(),
-  }),
-  patterns: z.array(z.string()),
-  marketStructure: z.string(),
-})
 
 export async function POST(request: NextRequest) {
   try {
     // Check if AI is enabled
     if (!AIFactory.isAIEnabled()) {
       return NextResponse.json(
-        { 
+        {
           error: 'AI analysis not configured',
-          message: 'Please configure AI_API_KEY in environment variables to enable AI analysis.'
+          message: 'Please configure GROQ_API_KEY or OPENAI_API_KEY in environment variables.',
         },
         { status: 503 }
       )
     }
 
-    // Parse and validate request body
+    // Parse request body - be lenient, normalize manually
     const body = await request.json()
-    const validation = requestSchema.safeParse(body)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: validation.error.errors },
-        { status: 400 }
-      )
+    // Normalize RSI - might be an object {current, values} or a number
+    const rsiRaw = body.indicators?.rsi
+    const rsiValue =
+      typeof rsiRaw === 'number'
+        ? rsiRaw
+        : typeof rsiRaw?.current === 'number'
+        ? rsiRaw.current
+        : undefined
+
+    // Normalize MACD - might have extra fields
+    const macdRaw = body.indicators?.macd
+    const macdValue =
+      macdRaw && typeof macdRaw.macd?.[macdRaw.macd.length - 1] !== 'undefined'
+        ? {
+            macd: macdRaw.macd[macdRaw.macd.length - 1] ?? 0,
+            signal: macdRaw.signal[macdRaw.signal.length - 1] ?? 0,
+            histogram: macdRaw.histogram[macdRaw.histogram.length - 1] ?? 0,
+          }
+        : macdRaw?.macd !== undefined && typeof macdRaw.macd === 'number'
+        ? { macd: macdRaw.macd, signal: macdRaw.signal ?? 0, histogram: macdRaw.histogram ?? 0 }
+        : undefined
+
+    // Normalize EMA - might be an object {values, period} or a number
+    const getEma = (val: any): number | undefined => {
+      if (typeof val === 'number') return val
+      if (Array.isArray(val?.values)) return val.values[val.values.length - 1]
+      if (typeof val?.current === 'number') return val.current
+      return undefined
     }
 
-    const input: AIAnalysisInput = validation.data
+    const input: AIAnalysisInput = {
+      symbol: String(body.symbol || 'Unknown'),
+      timeframe: String(body.timeframe || '1h'),
+      currentPrice: Number(body.currentPrice || 0),
+      changePercent: Number(body.changePercent ?? body.change ?? 0),
+      trend: {
+        direction: String(body.trend?.direction || 'neutral'),
+        strength: String(body.trend?.strength || 'weak'),
+        score: Number(body.trend?.score || 50),
+        emaAlignment: Boolean(body.trend?.emaAlignment ?? false),
+      },
+      signal: {
+        signal: String(body.signal?.signal || 'NEUTRAL'),
+        bullishProbability: Number(body.signal?.bullishProbability || 50),
+        bearishProbability: Number(body.signal?.bearishProbability || 50),
+        confidence: Number(body.signal?.confidence || 50),
+        setupStrength: String(body.signal?.setupStrength || 'weak'),
+        riskLevel: String(body.signal?.riskLevel || 'medium'),
+      },
+      indicators: {
+        rsi: rsiValue,
+        macd: macdValue,
+        ema20: getEma(body.indicators?.ema20),
+        ema50: getEma(body.indicators?.ema50),
+        ema200: getEma(body.indicators?.ema200),
+      },
+      supportResistance: {
+        nearestSupport: body.supportResistance?.nearestSupport
+          ? {
+              level: Number(body.supportResistance.nearestSupport.level),
+              strength: String(body.supportResistance.nearestSupport.strength || 'moderate'),
+            }
+          : undefined,
+        nearestResistance: body.supportResistance?.nearestResistance
+          ? {
+              level: Number(body.supportResistance.nearestResistance.level),
+              strength: String(body.supportResistance.nearestResistance.strength || 'moderate'),
+            }
+          : undefined,
+      },
+      patterns: Array.isArray(body.patterns)
+        ? body.patterns.map((p: any) => (typeof p === 'string' ? p : p?.name || '')).filter(Boolean)
+        : [],
+      marketStructure: String(body.marketStructure || 'No clear structure'),
+    }
 
-    // Get AI provider
+    // Get AI provider and analyze
     const aiProvider = AIFactory.createProvider()
-    
     if (!aiProvider) {
-      return NextResponse.json(
-        { error: 'AI provider not available' },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: 'AI provider not available' }, { status: 503 })
     }
 
-    // Generate AI analysis
     const analysis = await aiProvider.analyze(input)
 
     return NextResponse.json({
@@ -92,27 +108,10 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now(),
     })
   } catch (error) {
-    console.error('Error in /api/ai/analyze:', error)
-    
+    console.error('[AI analyze] Error:', error)
     return NextResponse.json(
-      { 
+      {
         error: error instanceof Error ? error.message : 'Failed to generate AI analysis',
-        fallback: true,
-        analysis: {
-          overview: 'AI analysis temporarily unavailable. Please refer to technical indicators for market assessment.',
-          trendAnalysis: 'Technical analysis shows current market conditions based on price action and indicators.',
-          momentum: 'Momentum can be assessed through RSI, MACD, and price structure.',
-          supportResistance: 'Key support and resistance levels are identified in the main analysis.',
-          bullishScenario: 'Bullish continuation possible above key resistance levels.',
-          bearishScenario: 'Bearish reversal possible below key support levels.',
-          riskFactors: [
-            'Market volatility',
-            'Economic data releases',
-            'Geopolitical events',
-            'Technical indicator divergence'
-          ],
-          tradingConsiderations: 'Always use proper risk management, set stop losses, and trade with capital you can afford to lose.',
-        }
       },
       { status: 500 }
     )
