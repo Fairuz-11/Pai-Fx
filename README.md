@@ -2,7 +2,8 @@
 
 Platform analisis market Forex yang membantu trader membaca kondisi market melalui chart, indikator teknikal, analisis statistik, dan AI-assisted market analysis.
 
-## ⚠️ Disclaimer
+> **Last Updated:** September 2026 — Real-time market data, AI analysis (Groq), and trading journal fully operational.
+
 
 PAI-FX adalah **platform analisis** dan **BUKAN** broker trading. Website ini tidak menyediakan layanan transaksi atau eksekusi order. Semua analisis dan sinyal yang diberikan bersifat edukatif dan tidak menjamin profit. Trading Forex memiliki risiko tinggi.
 
