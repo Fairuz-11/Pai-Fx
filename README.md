@@ -232,7 +232,7 @@ PAI-FX adalah platform analisis Forex yang **100% lengkap** dengan semua fitur b
 - Professional candlestick charts (Lightweight Charts)
 - Multi-timeframe support (1D, 4H, 1H, 30m, 15m, 5m)
 - Volume display
-- Indicator overlays
+- Indicator overlada ys
 - Interactive chart controls
 
 #### 🤖 AI Integration
@@ -420,3 +420,5 @@ For issues and questions:
 ---
 
 **Remember:** This platform provides analysis tools, not financial advice. Always do your own research and never trade with money you can't afford to lose.
+
+oh iya jangan lupa kado buat nanti tanggal 28 oktober 
