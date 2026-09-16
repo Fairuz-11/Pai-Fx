@@ -422,3 +422,5 @@ For issues and questions:
 **Remember:** This platform provides analysis tools, not financial advice. Always do your own research and never trade with money you can't afford to lose.
 
 oh iya jangan lupa kado buat nanti tanggal 28 oktober 
+
+sama bismilah fomc win
