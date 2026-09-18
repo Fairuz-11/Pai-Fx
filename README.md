@@ -331,7 +331,7 @@ Default pairs:
 - USD/CAD
 - NZD/USD
 - XAU/USD (Gold)
-
+a
 User dapat menambahkan pair lainnya melalui search.
 
 ## 📈 Technical Indicators
