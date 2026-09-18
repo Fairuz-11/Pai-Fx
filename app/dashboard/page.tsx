@@ -388,22 +388,26 @@ export default function DashboardPage() {
         )}
 
         {/* ── Quick Actions ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Open Chart', href: '/chart/EUR-USD', icon: <BarChart3 size={20} />, color: 'from-blue-500 to-blue-600' },
-            { label: 'Analyze Market', href: '/analysis', icon: <Activity size={20} />, color: 'from-purple-500 to-purple-600' },
-            { label: 'My Watchlist', href: '/watchlist', icon: <Star size={20} />, color: 'from-yellow-500 to-yellow-600' },
-            { label: 'Add Trade', href: '/journal', icon: <BookOpen size={20} />, color: 'from-green-500 to-green-600' },
+            { label: 'Open Chart', desc: 'EUR/USD', href: '/chart/EUR-USD', icon: <BarChart3 size={18} /> },
+            { label: 'Analysis', desc: 'Technical', href: '/analysis', icon: <Activity size={18} /> },
+            { label: 'Watchlist', desc: `${watchlist.length} pairs`, href: '/watchlist', icon: <Star size={18} /> },
+            { label: 'New Trade', desc: 'Journal entry', href: '/journal', icon: <BookOpen size={18} /> },
           ].map((action) => (
             <Link
               key={action.label}
               href={action.href}
-              className="flex flex-col items-center justify-center gap-2 p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-[var(--primary)] transition-colors group"
+              className="flex items-center gap-3 p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] hover:border-[var(--primary)] transition-all group"
             >
-              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center text-white group-hover:scale-110 transition-transform`}>
+              <div className="w-9 h-9 rounded-md bg-[var(--muted)] flex items-center justify-center text-[var(--muted-foreground)] group-hover:text-[var(--primary)] group-hover:bg-[var(--primary)]/10 transition-colors flex-shrink-0">
                 {action.icon}
               </div>
-              <span className="text-sm font-medium text-[var(--foreground)]">{action.label}</span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[var(--foreground)] leading-tight">{action.label}</p>
+                <p className="text-xs text-[var(--muted-foreground)] mt-0.5">{action.desc}</p>
+              </div>
+              <ChevronRight size={14} className="ml-auto text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
             </Link>
           ))}
         </div>
