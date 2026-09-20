@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="p-6 space-y-6">
 
         {/* Header */}
         <div>
@@ -209,34 +209,36 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
 
           {/* Sidebar tabs */}
-          <nav className="md:col-span-1">
-            <ul className="space-y-1">
-              {tabs.map((tab) => (
-                <li key={tab.id}>
-                  <button
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${
-                      activeTab === tab.id
-                        ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-medium'
-                        : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
-                    } ${tab.id === 'danger' ? 'text-red-500 hover:bg-red-500/10 hover:text-red-500' : ''}`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                    {activeTab === tab.id && (
-                      <ChevronRight size={14} className="ml-auto" />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <nav className="md:w-52 flex-shrink-0">
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-2">
+              <ul className="space-y-1">
+                {tabs.map((tab) => (
+                  <li key={tab.id}>
+                    <button
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${
+                        activeTab === tab.id
+                          ? 'bg-[var(--primary)]/10 text-[var(--primary)] font-medium'
+                          : 'text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]'
+                      } ${tab.id === 'danger' ? '!text-red-500 hover:!bg-red-500/10' : ''}`}
+                    >
+                      {tab.icon}
+                      {tab.label}
+                      {activeTab === tab.id && (
+                        <ChevronRight size={14} className="ml-auto" />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </nav>
 
           {/* Content */}
-          <div className="md:col-span-3">
+          <div className="flex-1 min-w-0">
 
             {/* ── Profile ── */}
             {activeTab === 'profile' && (
