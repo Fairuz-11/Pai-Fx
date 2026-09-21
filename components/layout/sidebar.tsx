@@ -12,20 +12,22 @@ import {
   BookOpen, 
   Settings,
   Menu,
-  X
+  X,
+  Calculator,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Market', href: '/market', icon: TrendingUp },
-  { name: 'Chart', href: '/chart/EUR-USD', icon: LineChart },
-  { name: 'Analysis', href: '/analysis', icon: Activity },
-  { name: 'Signals', href: '/signals', icon: Signal },
-  { name: 'Watchlist', href: '/watchlist', icon: Star },
-  { name: 'Journal', href: '/journal', icon: BookOpen },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard',   href: '/dashboard',      icon: LayoutDashboard },
+  { name: 'Market',      href: '/market',          icon: TrendingUp },
+  { name: 'Chart',       href: '/chart/EUR-USD',   icon: LineChart },
+  { name: 'Analysis',    href: '/analysis',        icon: Activity },
+  { name: 'Signals',     href: '/signals',         icon: Signal },
+  { name: 'Watchlist',   href: '/watchlist',       icon: Star },
+  { name: 'Journal',     href: '/journal',         icon: BookOpen },
+  { name: 'Calculator',  href: '/calculator',      icon: Calculator },
+  { name: 'Settings',    href: '/settings',        icon: Settings },
 ]
 
 export function Sidebar() {
