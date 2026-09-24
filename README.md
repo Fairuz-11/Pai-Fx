@@ -428,3 +428,5 @@ sama bismilah fomc win
 bismillah nfp 2 oktober win
 
 jagain streak gw woi
+jagain streak gw woi
+jagain streak gw woi
